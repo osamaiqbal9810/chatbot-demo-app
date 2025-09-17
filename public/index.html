@@ -1,174 +1,198 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>WhatsApp Demo Chat</title>
+  <meta charset="UTF-8">
+  <title>WhatsApp Bot Demo</title>
   <style>
     body {
-      font-family: "Segoe UI", Arial, sans-serif;
-      margin: 0;
+      font-family: Arial, sans-serif;
       background: #ece5dd;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      margin: 0;
+      padding: 0;
     }
-
-    #app {
-      width: 400px;
-      max-width: 100%;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      background: #fff;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
     header {
       background: #075e54;
-      color: #fff;
-      padding: 10px 15px;
-      font-size: 16px;
-      font-weight: bold;
+      color: white;
+      padding: 12px;
       text-align: center;
+      font-size: 20px;
+      font-weight: bold;
     }
-
-    #login {
+    .screen {
+      display: none;
       padding: 20px;
     }
-
-    #chat {
-      flex: 1;
-      display: none;
-      flex-direction: column;
+    .active {
+      display: block;
     }
-
-    #messages {
-      flex: 1;
+    .login-box, .consent-box, .chat-box {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      max-width: 400px;
+      margin: 40px auto;
+      box-shadow: 0px 3px 6px rgba(0,0,0,0.2);
+    }
+    input, button {
+      width: 100%;
       padding: 10px;
+      margin: 8px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #25d366;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #20b954;
+    }
+    #chat {
+      border: 1px solid #ccc;
+      height: 300px;
       overflow-y: auto;
-      background: #ece5dd;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #fefefe;
       display: flex;
       flex-direction: column;
     }
-
-    .bubble {
-      margin: 5px;
-      padding: 10px 14px;
-      border-radius: 18px;
-      display: inline-block;
-      max-width: 75%;
+    .msg {
+      margin: 5px 0;
+      padding: 8px 12px;
+      border-radius: 6px;
+      max-width: 70%;
       word-wrap: break-word;
     }
-
-    .out {
-      background: #dcf8c6;
-      align-self: flex-end;
-    }
-
     .in {
-      background: #fff;
+      background: #dcf8c6;
       align-self: flex-start;
     }
-
-    #input {
-      display: flex;
-      border-top: 1px solid #ccc;
-      background: #f0f0f0;
-    }
-
-    #input input {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      outline: none;
-      font-size: 14px;
+    .out {
       background: #fff;
+      border: 1px solid #ddd;
+      align-self: flex-end;
     }
-
-    #input button {
-      padding: 10px 15px;
-      border: none;
-      background: #075e54;
-      color: #fff;
-      cursor: pointer;
-      font-size: 14px;
+    .input-row {
+      display: flex;
+      gap: 5px;
     }
-
-    #input button:hover {
-      background: #0a7669;
+    .input-row input {
+      flex: 1;
+    }
+    .input-row button {
+      width: auto;
+      padding: 10px 20px;
     }
   </style>
 </head>
 <body>
-  <div id="app">
-    <header>WhatsApp Bot Demo</header>
+  <header>WhatsApp Bot Demo</header>
 
-    <div id="login">
+  <!-- Login Screen -->
+  <div id="login-screen" class="screen active">
+    <div class="login-box">
       <h3>Login</h3>
-      <input id="email" placeholder="Email"><br><br>
-      <input id="password" type="password" placeholder="Password"><br><br>
-      <button onclick="login()">Login</button>
-      <p id="loginError" style="color:red;"></p>
+      <input type="email" id="email" placeholder="Email" value="reviewer@test.com">
+      <input type="password" id="password" placeholder="Password" value="Password123">
+      <button id="login-btn">Login</button>
     </div>
+  </div>
 
-    <div id="chat">
-      <div id="messages"></div>
-      <div id="input">
-        <input id="msgInput" placeholder="Type a message..." />
-        <button onclick="sendMessage()">Send</button>
+  <!-- Consent Screen -->
+  <div id="consent-screen" class="screen">
+    <div class="consent-box">
+      <h3>Permissions</h3>
+      <p>This demo app will access and respond to your WhatsApp messages.</p>
+      <label><input type="checkbox" id="consent-checkbox"> I allow this app to access my WhatsApp data.</label>
+      <button id="consent-btn">Continue</button>
+    </div>
+  </div>
+
+  <!-- Chat Screen -->
+  <div id="chat-screen" class="screen">
+    <div class="chat-box">
+      <h3>Chat with Bot</h3>
+      <div id="chat"></div>
+      <div class="input-row">
+        <input type="text" id="message" placeholder="Type a message...">
+        <button id="send-btn">Send</button>
       </div>
     </div>
   </div>
 
   <script>
-    async function login() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const res = await fetch("/api/login", {
-        method:"POST", headers:{ "Content-Type":"application/json" },
+    const loginScreen = document.getElementById('login-screen');
+    const consentScreen = document.getElementById('consent-screen');
+    const chatScreen = document.getElementById('chat-screen');
+    const chatBox = document.getElementById('chat');
+
+    // ---- LOGIN ----
+    document.getElementById('login-btn').addEventListener('click', async () => {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      if (res.ok) {
-        document.getElementById("login").style.display="none";
-        document.getElementById("chat").style.display="flex";
+
+      const data = await res.json();
+      if (data.ok || data.success === true) {
+        loginScreen.classList.remove('active');
+        consentScreen.classList.add('active');
       } else {
-        document.getElementById("loginError").innerText="Invalid credentials";
+        alert('Invalid credentials');
+      }
+    });
+
+    // ---- CONSENT ----
+    document.getElementById('consent-btn').addEventListener('click', () => {
+      const consentGiven = document.getElementById('consent-checkbox').checked;
+      if (!consentGiven) {
+        alert('Please provide consent to continue');
+        return;
+      }
+      consentScreen.classList.remove('active');
+      chatScreen.classList.add('active');
+      loadMessages();
+    });
+
+    // ---- SEND MESSAGE ----
+    document.getElementById('send-btn').addEventListener('click', async () => {
+      const text = document.getElementById('message').value;
+      if (!text) return;
+
+      const res = await fetch('/api/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: "demo-user", text })
+      });
+
+      const data = await res.json();
+      document.getElementById('message').value = '';
+      loadMessages();
+    });
+
+    // ---- LOAD MESSAGES ----
+    async function loadMessages() {
+      const res = await fetch('/api/messages');
+      const data = await res.json();
+      if (data.ok) {
+        chatBox.innerHTML = '';
+        data.messages.forEach(m => {
+          const div = document.createElement('div');
+          div.className = 'msg ' + (m.direction === 'in' ? 'in' : 'out');
+          div.textContent = m.text;
+          chatBox.appendChild(div);
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
       }
     }
-
-    function renderMessages(msgs) {
-      const box = document.getElementById("messages");
-      box.innerHTML="";
-      msgs.forEach(m=>{
-        const div=document.createElement("div");
-        div.className="bubble "+(m.direction==="out"?"out":"in");
-        div.innerText=m.text;
-        box.appendChild(div);
-      });
-      box.scrollTop=box.scrollHeight;
-    }
-
-    async function sendMessage() {
-      const text=document.getElementById("msgInput").value;
-      if(!text) return;
-      document.getElementById("msgInput").value="";
-      await fetch("/api/send", {
-        method:"POST", headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ text })
-      });
-      const resp = await fetch("/api/messages");
-      const all=await resp.json();
-      renderMessages(all.messages);
-    }
-
-    setInterval(async ()=>{
-      const resp = await fetch("/api/messages");
-      const all=await resp.json();
-      renderMessages(all.messages);
-    }, 2000);
   </script>
 </body>
 </html>
