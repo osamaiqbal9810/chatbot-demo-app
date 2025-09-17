@@ -113,6 +113,48 @@ app.post('/api/templates/:id/send', (req, res) => {
   return res.json({ ok: true, sent: true });
 });
 
+
+// Send real WhatsApp template message
+app.post('/api/send-whatsapp', async (req, res) => {
+  const { phone, templateName, languageCode } = req.body;
+  if (!phone || !templateName) {
+    return res.status(400).json({ ok: false, error: 'Missing phone or templateName' });
+  }
+
+  try {
+    const payload = {
+      messaging_product: 'whatsapp',
+      to: phone,
+      type: 'template',
+      template: {
+        name: templateName,
+        language: { code: languageCode || 'en_US' }
+      }
+    };
+
+    const response = await axios.post(WHATSAPP_API_URL, payload, {
+      headers: {
+        Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // Optionally log message in your in-memory store
+    messages.push({
+      id: uuidv4(),
+      from: 'You (WhatsApp)',
+      text: `Template "${templateName}" sent to ${phone}`,
+      direction: 'out',
+      time: new Date().toISOString()
+    });
+
+    return res.json({ ok: true, response: response.data });
+  } catch (err) {
+    console.error('WhatsApp API error:', err.response?.data || err.message);
+    return res.status(500).json({ ok: false, error: 'Failed to send WhatsApp message', details: err.response?.data || err.message });
+  }
+});
+
 // ----------------- Webhook (demo) -----------------
 app.get('/webhook', (req, res) => {
   return res.status(200).send(req.query['hub.challenge'] || 'demo_webhook_verified');

@@ -1,49 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>WhatsApp Bot Demo</title>
   <style>
-    body { font-family: Arial, sans-serif; margin:0; background:#f4f6f9; }
+    body { font-family: Arial; margin:0; background:#f4f6f9; }
     header { background:#25D366; color:#fff; padding:12px; text-align:center; font-size:20px; font-weight:bold; }
-    nav { display:flex; background:#eee; }
-    nav button { flex:1; padding:12px; border:none; cursor:pointer; background:#ddd; font-size:14px; }
-    nav button.active { background:#25D366; color:white; font-weight:bold; }
-
-    #loginScreen { padding:40px; text-align:center; }
-    #loginScreen input { display:block; margin:10px auto; padding:10px; width:250px; }
-    #loginScreen button { background:#25D366; color:white; border:none; padding:10px 20px; cursor:pointer; border-radius:4px; }
-
-    #app { display:flex; height:calc(100vh - 70px); flex-direction:column; }
+    #loginScreen, #app { padding:20px; text-align:center; }
+    #loginScreen input, #app input { display:block; margin:10px auto; padding:10px; width:250px; }
+    #loginScreen button, #app button { background:#25D366; color:white; border:none; padding:10px 20px; cursor:pointer; border-radius:4px; margin-top:10px; }
 
     /* Tabs */
-    #chat, #templates, #profile, #analytics { flex:1; display:none; padding:20px; overflow-y:auto; }
+    .tabs { display:flex; justify-content:center; margin-bottom:10px; }
+    .tab { padding:10px 20px; cursor:pointer; border-bottom:2px solid transparent; }
+    .tab.active { border-bottom:2px solid #25D366; font-weight:bold; }
 
-    /* Chat styles */
-    .messages { display:flex; flex-direction:column; height:70%; overflow-y:auto; background:white; padding:10px; border-radius:8px; box-shadow:0 0 4px rgba(0,0,0,0.1); }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    .messages { display:flex; flex-direction:column; height:300px; overflow-y:auto; background:white; padding:10px; border-radius:8px; box-shadow:0 0 4px rgba(0,0,0,0.1); margin-bottom:10px; }
     .msg { margin:6px; padding:10px; border-radius:8px; max-width:60%; word-wrap:break-word; }
-    .user { background:#DCF8C6; align-self:flex-end; text-align:right; margin-left:auto; }
-    .bot { background:#fff; border:1px solid #ddd; align-self:flex-start; text-align:left; margin-right:auto; }
-    .msg-input { display:flex; margin-top:10px; }
+    .user { background:#DCF8C6; align-self:flex-end; text-align:right; }
+    .bot { background:#fff; border:1px solid #ddd; align-self:flex-start; text-align:left; }
+
+    .msg-input { display:flex; justify-content:center; margin-top:10px; }
     .msg-input input { flex:1; padding:10px; border:1px solid #ccc; border-radius:4px 0 0 4px; }
-    .msg-input button { background:#25D366; color:white; border:none; padding:10px 16px; border-radius:0 4px 4px 0; cursor:pointer; }
-    .simulate { margin-top:10px; background:#007bff; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; }
+    .msg-input button { padding:10px 16px; border-radius:0 4px 4px 0; margin-left:5px; }
 
-    /* Templates styles */
-    #templates h3 { margin-top:0; }
-    #templates form { margin-bottom:20px; }
-    #templates input, #templates textarea { display:block; margin:8px 0; padding:8px; width:80%; }
-    #templateList { list-style:none; padding:0; }
-    #templateList li { margin:5px 0; display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:6px; box-shadow:0 0 2px rgba(0,0,0,0.1); }
-    #templateList button { background:#25D366; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; }
-
-    /* Profile styles */
-    #profile input { display:block; margin:10px 0; padding:8px; width:60%; }
-    #profile button { background:#25D366; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; }
-
-    /* Analytics styles */
-    #analytics .card { background:white; margin:10px 0; padding:16px; border-radius:6px; box-shadow:0 0 3px rgba(0,0,0,0.1); }
-    #analytics h3 { margin-top:0; }
+    /* Templates list */
+    .template-item { display:flex; justify-content:space-between; background:white; padding:10px; margin:6px 0; border-radius:6px; box-shadow:0 0 2px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
@@ -59,85 +44,54 @@
 
   <!-- App -->
   <div id="app" style="display:none;">
-    <nav>
-      <button id="chatTab" class="active" onclick="showTab('chat')">💬 Chat</button>
-      <button id="templatesTab" onclick="showTab('templates')">📑 Templates</button>
-      <button id="profileTab" onclick="showTab('profile')">👤 Profile</button>
-      <button id="analyticsTab" onclick="showTab('analytics')">📊 Analytics</button>
-    </nav>
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" onclick="showTab('chatTab')">Chat</div>
+      <div class="tab" onclick="showTab('templateTab')">Templates</div>
+    </div>
 
-    <!-- Chat Section -->
-    <div id="chat">
+    <!-- Chat Tab -->
+    <div id="chatTab" class="tab-content active">
       <div class="messages" id="messages"></div>
       <div class="msg-input">
         <input id="msgInput" type="text" placeholder="Type a message..." />
         <button onclick="sendMsg()">Send</button>
+        <button onclick="prefillTemplate()">Send Template</button>
       </div>
-      <button class="simulate" onclick="simulateInbound()">Simulate Incoming Message</button>
     </div>
 
-    <!-- Templates Section -->
-    <div id="templates">
-      <h3>Create Message Template</h3>
-      <form onsubmit="createTemplate(event)">
-        <input id="templateName" type="text" placeholder="Template Name" required />
-        <textarea id="templateBody" placeholder="Template Body Text" required></textarea>
-        <button type="submit">Create Template</button>
-      </form>
-      <h3>Available Templates</h3>
-      <ul id="templateList"></ul>
-    </div>
-
-    <!-- Profile Section -->
-    <div id="profile">
-      <h3>Business Profile</h3>
-      <label>Business Name</label>
-      <input id="bizName" value="Demo Shop" />
-      <label>Business Number</label>
-      <input id="bizNumber" value="+123456789 (demo)" disabled />
-      <button onclick="saveProfile()">Save Profile</button>
-    </div>
-
-    <!-- Analytics Section -->
-    <div id="analytics">
-      <h3>Analytics Overview</h3>
-      <div class="card"><strong>Messages Sent:</strong> 42</div>
-      <div class="card"><strong>Delivered:</strong> 40 (95%)</div>
-      <div class="card"><strong>Avg Response Time:</strong> 3 seconds</div>
+    <!-- Template Tab -->
+    <div id="templateTab" class="tab-content">
+      <h3>Your Templates</h3>
+      <div id="templateList">Loading templates...</div>
+      <button onclick="fetchTemplates()">Refresh Templates</button>
     </div>
   </div>
 
   <script>
-    let templates = [];
+    const WHATSAPP_API_URL = 'https://graph.facebook.com/v22.0/766109259924666/messages';
+    const WHATSAPP_ACCESS_TOKEN = 'EAASeUmOZCcKwBPUqcpow6hy0xsqwzknBgpEpfuQ6BZCfrgPAPZCPMVHOpXZBi5fVQdgFrVdBLbt5DfgTOpbZAZANajniXG2NoOX4h8Ihk35pZCTKeVN6h4petjfwC8SeOI2qFnegSfxXczBXACWhMQMM15JtmZCKL9URZCRsAZAdseYZAhk9WepZCpDgV0KwqPZCTLCQdqpuBVUsDtpwf2sv6dyaOnTjvpiCgZAZAdKJxH6KXlAOvpidIZBFaEfGBfQUimB3UwZDZD';
+    const RECIPIENT_PHONE = '923319700834'; // user number
 
     function login() {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
       if (!email || !password) return alert("Enter email and password!");
-      // Permission simulation
-      alert("This app requests permission to:\n- Access user data\n- Create message templates\n- Configure webhooks\n- Manage profile\n- Access analytics");
+      
+      const allow = confirm("This app requests permission to:\n- Access user data\n- Send messages via WhatsApp API\n- Manage profile\n- Access analytics");
+      if (!allow) return alert("Permission denied.");
+
       document.getElementById("loginScreen").style.display = "none";
-      document.getElementById("app").style.display = "flex";
-      showTab("chat");
+      document.getElementById("app").style.display = "block";
+
+      fetchTemplates();
     }
 
-    function showTab(tab) {
-      ["chat","templates","profile","analytics"].forEach(id=>{
-        document.getElementById(id).style.display="none";
-        document.getElementById(id+"Tab").classList.remove("active");
-      });
-      document.getElementById(tab).style.display="block";
-      document.getElementById(tab+"Tab").classList.add("active");
-    }
-
-    // Chat
-    function sendMsg() {
-      const msgBox = document.getElementById("msgInput");
-      const text = msgBox.value.trim();
-      if (!text) return;
-      addMessage(text, "user");
-      msgBox.value = "";
-      setTimeout(() => addMessage("Bot reply to: " + text, "bot"), 500);
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+      event.target.classList.add('active');
     }
 
     function addMessage(text, type) {
@@ -148,49 +102,97 @@
       div.scrollIntoView({ behavior: "smooth" });
     }
 
-    function simulateInbound() {
-      addMessage("Inbound WhatsApp: Hello, I need help!", "bot");
-      setTimeout(() => addMessage("Auto-reply: How can we assist you?", "user"), 800);
+    function prefillTemplate() {
+      document.getElementById("msgInput").value = "Hi, Welcome to Eyratech-Bot";
     }
 
-    // Templates
-    function createTemplate(e) {
-      e.preventDefault();
-      const name = document.getElementById("templateName").value.trim();
-      const body = document.getElementById("templateBody").value.trim();
-      if (!name || !body) return alert("Fill all fields!");
-      templates.push({ name, body });
-      document.getElementById("templateName").value = "";
-      document.getElementById("templateBody").value = "";
-      renderTemplates();
+    async function sendWhatsApp(payload) {
+      try {
+        const response = await fetch(WHATSAPP_API_URL, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (response.ok) addMessage("✅ WhatsApp message sent", "bot");
+        else addMessage("❌ Failed: " + (data.error?.message || 'Unknown'), "bot");
+        console.log("API response:", data);
+      } catch (err) {
+        addMessage("❌ Error: " + err.message, "bot");
+        console.error(err);
+      }
     }
 
-    function renderTemplates() {
-      const ul = document.getElementById("templateList");
-      ul.innerHTML = "";
-      templates.forEach((t, i) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <div>
-            <strong>${t.name}</strong><br/>
-            <small>${t.body}</small>
-          </div>
-          <button onclick="sendTemplate(${i})">Send</button>
-        `;
-        ul.appendChild(li);
-      });
+    async function sendMsg() {
+      const messageText = document.getElementById("msgInput").value.trim();
+      if (!messageText) return alert("Type a message or use template!");
+      addMessage(messageText, "user");
+
+      let payload;
+      if (messageText === "Hi, Welcome to Eyratech-Bot") {
+        payload = {
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: RECIPIENT_PHONE,
+          type: "template",
+          template: { name: "hello_world", language: { code: "en_US" } }
+        };
+      } else {
+        payload = {
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: RECIPIENT_PHONE,
+          type: "text",
+          text: { preview_url: false, body: messageText }
+        };
+      }
+
+      await sendWhatsApp(payload);
+      document.getElementById("msgInput").value = "";
     }
 
-    function sendTemplate(index) {
-      const t = templates[index];
-      addMessage("Sent template: " + t.name + " → " + t.body, "user");
-      setTimeout(() => addMessage("Bot delivered template: " + t.name, "bot"), 500);
+    async function fetchTemplates() {
+      const WABA_ID = '2111733529352640';
+    const url = `https://graph.facebook.com/v22.0/${WABA_ID}/message_templates`
+      try {
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}` }
+        });
+        const data = await res.json();
+        const list = document.getElementById("templateList");
+        list.innerHTML = '';
+
+        if (!data.data || data.data.length === 0) {
+          list.innerText = "No templates found.";
+          return;
+        }
+
+        data.data.forEach(tpl => {
+          const div = document.createElement("div");
+          div.className = "template-item";
+          div.innerHTML = `<span>${tpl.name}</span><button onclick='sendTemplate("${tpl.name}")'>Send</button>`;
+          list.appendChild(div);
+        });
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById("templateList").innerText = "Error fetching templates.";
+      }
     }
 
-    // Profile
-    function saveProfile() {
-      const name = document.getElementById("bizName").value;
-      alert("Business profile updated:\nName: " + name + "\nNumber: +123456789 (demo)");
+    async function sendTemplate(name) {
+      addMessage(`Sending template: ${name}`, "user");
+      const payload = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: RECIPIENT_PHONE,
+        type: "template",
+        template: { name, language: { code: "en_US" } }
+      };
+      await sendWhatsApp(payload);
     }
   </script>
 </body>
