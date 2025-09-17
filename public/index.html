@@ -54,9 +54,9 @@
     <div id="chatTab" class="tab-content active">
       <div class="messages" id="messages"></div>
       <div class="msg-input">
-        <input id="msgInput" type="text" placeholder="Type a message..." />
-        <button onclick="sendMsg()">Send</button>
-        <button onclick="prefillTemplate()">Send Template</button>
+        <!-- <input id="msgInput" type="text" placeholder="Type a message..." /> -->
+        <button onclick="prefillTemplate()">Send</button>
+        <!-- <button onclick="prefillTemplate()">Send Template</button> -->
       </div>
     </div>
 
@@ -103,7 +103,8 @@
     }
 
     function prefillTemplate() {
-      document.getElementById("msgInput").value = "Hi, Welcome to Eyratech-Bot";
+      //document.getElementById("msgInput").value = "Hi, Welcome to Eyratech-Bot";
+      sendMsg();
     }
 
     async function sendWhatsApp(payload) {
@@ -127,8 +128,8 @@
     }
 
     async function sendMsg() {
-      const messageText = document.getElementById("msgInput").value.trim();
-      if (!messageText) return alert("Type a message or use template!");
+     const messageText = "Hi, Welcome to Eyratech-Bot";
+     // if (!messageText) return alert("Type a message or use template!");
       addMessage(messageText, "user");
 
       let payload;
