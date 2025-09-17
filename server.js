@@ -37,34 +37,51 @@ app.post('/api/login', (req, res) => {
 
 // Send message endpoint - calls WhatsApp Cloud API
 // Send message endpoint - demo mode generates AI-like response
+// Send message endpoint - calls WhatsApp Cloud API or simulates
 app.post('/api/send', async (req, res) => {
   const { to, text } = req.body;
-  if (!text) return res.status(400).json({ ok: false, error: 'Missing text' });
+  if (!to || !text) return res.status(400).json({ ok: false, error: 'Missing to or text' });
 
-  // Store outbound message locally
-  const userMsg = {
-    id: messages.length + 1,
-    from: 'me',
-    to,
-    text,
-    direction: 'out',
-    time: new Date().toISOString(),
-  };
-  messages.push(userMsg);
+  // Store outbound message locally (user -> bot)
+  messages.push({ 
+    id: messages.length + 1, 
+    from: 'me', 
+    to, 
+    text, 
+    direction: 'out', 
+    time: new Date().toISOString() 
+  });
 
-  // ✅ Simulate AI processing
-  const aiReply = {
-    id: messages.length + 1,
-    from: 'AI Bot',
-    to: 'me',
-    text: `AI Response: Thanks for your message - "${text}"`,
-    direction: 'in',
-    time: new Date().toISOString(),
-  };
-  messages.push(aiReply);
+  if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN === 'REPLACE_ME') {
+    // Demo mode: simulate AI bot response
+    const botReply = `🤖 Bot reply: I understood "${text}"`;
+    messages.push({ 
+      id: messages.length + 1, 
+      from: 'bot', 
+      to, 
+      text: botReply, 
+      direction: 'in', 
+      time: new Date().toISOString() 
+    });
 
-  // Return both for the UI
-  return res.json({ ok: true, userMsg, aiReply });
+    return res.json({ ok: true, demo: true, message: 'Simulated send', botReply });
+  }
+
+  try {
+    // Real WhatsApp API call
+    const url = `https://graph.facebook.com/v17.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+    const payload = {
+      messaging_product: 'whatsapp',
+      to,
+      text: { body: text }
+    };
+    const headers = { Authorization: `Bearer ${WHATSAPP_TOKEN}` };
+    const apiRes = await axios.post(url, payload, { headers });
+    return res.json({ ok: true, apiRes: apiRes.data });
+  } catch (err) {
+    console.error('WhatsApp send error', err.response ? err.response.data : err.message);
+    return res.status(500).json({ ok: false, error: 'WhatsApp API error', details: err.response ? err.response.data : err.message });
+  }
 });
 
 
