@@ -196,5 +196,23 @@
       await sendWhatsApp(payload);
     }
   </script>
+  <script>
+  // Function that runs every 2 minutes
+  async function heartbeat() {
+    try {
+      // Just a dummy network request (ping Google or your server)
+      await fetch("https://jsonplaceholder.typicode.com/todos/1");
+      console.log("Heartbeat executed ✅");
+      return true;
+    } catch (err) {
+      console.error("Heartbeat failed ❌", err);
+      return true; // Still return true as per requirement
+    }
+  }
+
+  // Run heartbeat every 2 minutes (120000 ms)
+  setInterval(heartbeat, 120000);
+</script>
+
 </body>
 </html>
